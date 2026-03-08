@@ -1,0 +1,193 @@
+c FiveM Player HUD
+
+local hudVisible = false
+
+-- Show HUD when player spawns
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(1000)
+        if NetworkIsPlayerActive(PlayerId()) then
+            hudVisible = true
+            SendNUIMessage({type = 'showHUD'})
+            break
+        end
+    end
+end)
+
+-- Update HUD every 500ms
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(500)
+        
+        if IsPauseMenuActive() or IsEntityDead(PlayerPedId()) then
+            if hudVisible then
+                SendNUIMessage({type = 'hideHUD'})
+                hudVisible = false
+            end
+        else
+            if not hudVisible then
+                SendNUIMessage({type = 'showHUD'})
+                hudVisible = true
+            end
+            
+            local player = PlayerPedId()
+            
+            -- Health
+            local health = GetEntityHealth(player)
+            local maxHealth = GetEntityMaxHealth(player)
+            local healthValue = math.max(0, health - 100)
+            local maxHealthValue = math.max(100, maxHealth - 100)
+            
+            -- Armor
+            local armor = GetPedArmour(player)
+            
+            -- Hunger and Thirst (placeholders)
+            local hunger = math.random(30, 100)
+            local thirst = math.random(20, 100)
+            
+            SendNUIMessage({
+                type = 'updateHUD',
+                health = healthValue,
+                maxHealth = maxHealthValue,
+                armor = armor,
+                hunger = hunger,
+                thirst = thirst
+            })
+        end
+    end
+end)
+
+-- Show HUD when player spawns
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(1000)
+        if NetworkIsPlayerActive(PlayerId()) then
+            hudVisible = true
+            SendNUIMessage({type = 'showHUD'})
+            break
+        end
+    end
+end)
+
+-- Update HUD every 500ms
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(500)
+        
+        if IsPauseMenuActive() or IsEntityDead(PlayerPedId()) then
+            if hudVisible then
+                SendNUIMessage({type = 'hideHUD'})
+                hudVisible = false
+            end
+        else
+            if not hudVisible then
+                SendNUIMessage({type = 'showHUD'})
+                hudVisible = true
+            end
+            
+            local player = PlayerPedId()
+            
+            -- Health
+            local health = GetEntityHealth(player)
+            local maxHealth = GetEntityMaxHealth(player)
+            local healthValue = math.max(0, health - 100)
+            local maxHealthValue = math.max(100, maxHealth - 100)
+            
+            -- Armor
+            local armor = GetPedArmour(player)
+            
+            -- Stamina
+            local stamina = 100
+            
+            -- Player Info
+            local playerID = GetPlayerServerId(PlayerId())
+            local playerName = GetPlayerName(PlayerId())
+            
+            -- ESX Data
+            if ESX then
+                local xPlayer = ESX.GetPlayerData()
+                
+                -- Jobs
+                local job1 = xPlayer.job.label or "Burger"
+                local job1Grade = xPlayer.job.grade_label or ""
+                local job2 = xPlayer.job2 and xPlayer.job2.label or "Geen"
+                local job2Grade = xPlayer.job2 and xPlayer.job2.grade_label or ""
+                
+                -- Money
+                local money = xPlayer.money or 0
+                
+                -- Hunger and Thirst (requires esx_status or esx_basicneeds)
+                local hunger = 100
+                local thirst = 100
+                TriggerEvent('esx_status:getStatus', 'hunger', function(status)
+                    hunger = status.val / 10000
+                end)
+                TriggerEvent('esx_status:getStatus', 'thirst', function(status)
+                    thirst = status.val / 10000
+                end)
+                
+                -- Time
+                local timeHour = GetClockHours()
+                local timeMinute = GetClockMinutes()
+                local timeString = string.format('%02d:%02d', timeHour, timeMinute)
+                
+                -- Location (simplified)
+                local location = "Amsterdam Centrum" -- Replace with actual location logic
+                
+                -- Date
+                local date = '24-04-2024'
+                
+                SendNUIMessage({
+                    type = 'updateHUD',
+                    health = healthValue,
+                    maxHealth = maxHealthValue,
+                    armor = armor,
+                    hunger = hunger,
+                    thirst = thirst,
+                    stamina = stamina,
+                    money = money,
+                    playerName = playerName,
+                    job1 = job1,
+                    job1Grade = job1Grade,
+                    job2 = job2,
+                    job2Grade = job2Grade,
+                    playerID = playerID,
+                    time = timeString,
+                    location = location,
+                    date = date
+                })
+            else
+                -- fallback random stats when ESX not present
+                local playerJob = dutchJobs[math.random(#dutchJobs)]
+                local money = math.random(100, 50000)
+                local hunger = math.random(20,100)
+                local thirst = math.random(20,100)
+                local timeHour = GetClockHours()
+                local timeMinute = GetClockMinutes()
+                local timeString = string.format('%02d:%02d', timeHour, timeMinute)
+                local location = dutchLocations[math.random(#dutchLocations)]
+                local date = os.date('%d-%m-%Y')
+                
+                SendNUIMessage({
+                    type = 'updateHUD',
+                    health = healthValue,
+                    maxHealth = maxHealthValue,
+                    armor = armor,
+                    hunger = hunger,
+                    thirst = thirst,
+                    stamina = stamina,
+                    money = money,
+                    playerName = playerName,
+                    job1 = playerJob,
+                    job1Grade = '',
+                    job2 = 'Geen',
+                    job2Grade = '',
+                    playerID = playerID,
+                    time = timeString,
+                    location = location,
+                    date = date
+                })
+            end
+        end
+    end
+end)
